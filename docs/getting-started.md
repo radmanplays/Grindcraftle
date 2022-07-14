@@ -9,7 +9,7 @@ The benefits of using Github:
  - It lets you undo changes to your code, and to have multiple versions of it.
  - It lets you collaborate with other people, if you want to.
 
-## Getting set up with Github Desktop, Visual Studio Code, and The Modding Tree:
+## Getting set up with Github Desktop, Visual Studio Code, and the Grindcraft Game Maker:
 
 1. Install [Github Desktop](https://desktop.github.com/) and [Visual Studio Code](https://code.visualstudio.com/).
 
