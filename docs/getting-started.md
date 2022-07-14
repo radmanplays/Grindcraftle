@@ -39,7 +39,7 @@ The benefits of using Github:
 
 7. Finally, at the top middle, click "push origin" to push your changes out onto the online repository.
 
-8. You can view your project online, or share it with others, by going to https://raw.githack.com/[YOUR-GITHUB-USERNAME]/Grindcraft-Game-Maker/index.html. You do not need to do this to test your mod locally.
+8. You can view your project online, or share it with others, by going to https://raw.githack.com/[YOUR-GITHUB-USERNAME]/Grindcraft-Game-Maker/main/index.html. You do not need to do this to test your mod locally.
 
 And now, you have successfully used Github! Head on over to the [docs](overview.md) to start making your game!
 
