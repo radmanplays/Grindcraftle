@@ -87,7 +87,7 @@ Individual resources can have these properties:
    - With this, the farmer would make the grind take 1.5x less time and give 3x more items, and the bone meal would make it take 2x less time.
    - **Important:** Here, the items can be placed in any order that you want, since all the boosts will be added anyways.
  - probability: A number that tells how likely a resource is to be chosen as your next grind. (If for example resource 1 has a probability of 1 and resource 2 has a probability of 2, resource 2 is twice as likely to be chosen as resource 1).
- - customResources: **optional**. If the above properties are too simple for you, you can make the different resources in the grind reward custom resources, instead of just using the id name. Here's an example of what custom resources might look like:
+ - customResources (Advanced): **optional**. If the above properties are too simple for you, you can make the different resources in the grind reward custom resources, instead of just using the id name. Here's an example of what custom resources might look like:
 
 ```
 {
