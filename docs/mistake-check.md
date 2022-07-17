@@ -1,9 +1,10 @@
 # Common mistakes
 
- 1. Forgetting to put a comma between every value in a list and after every property in areas, grinds, crafts, resources, etc.
+ 1. Forgot to put a comma between every value in a list and after every property in areas, grinds, crafts, resources, etc.
  2. Put text outside of quotation marks (""). All **text** except true/false should be in quotation mark. Resource names in the `addResources` function only need to be in quotation marks if they have multiple words, though.
  3. Put numbers or booleans (true/false) inside quotation marks. Numbers and booleans should never be in quotation marks, except when you are using numbers as text (either in a name or description).
  4. Forgot a bracket (`[]` or `{}`). Always remember to put brackets both before and after the contents of a grind, craft or resource:
+ 5. Forgot to add a resource to the `addResources` function. All resources that are used in grinds/crafts should be added to the `addResources` function first. If not, the game won't work.
 
 
 ```

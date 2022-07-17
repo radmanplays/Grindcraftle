@@ -140,6 +140,8 @@ function getSavedData(save) {
     if (save.currentArea === 0 || save.currentArea) {
         player.currentArea = save.currentArea;
     }
+
+    player.saveGotten = true;
 }
 
 function addResources(contents) {

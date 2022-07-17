@@ -52,7 +52,7 @@ Individual grinds can have these properties:
 
  - name: The name of the grind.
  - unlocked: true or false. Should not be inside "". If true, the grind will be unlocked when the area is unlocked.
- - auto: A list of items that will automatically grind this grind, so that you won't have to click it all the time! Each item in the list should be separated by a comma (for example: `auto: ["farmer", "miner", "hunter"],`).
+ - auto: **optional**. A list of items that will automatically grind this grind, so that you won't have to click it all the time! Each item in the list should be separated by a comma (for example: `auto: ["farmer", "miner", "hunter"],`).
  - background: A link/path to the background image of the grind. Usually "images/grinds/imageName.png".
    - Images should be either be 250x100 pixels or 500x200 pixels in size (Though you can also use other sizes with the same ratio).
  - resources: A list of the different resources you can get in this grind. More info below.
