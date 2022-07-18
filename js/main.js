@@ -169,6 +169,14 @@ function addVariables(contents) {
 
     for (let variable in contents) {
         if (player.variables[variable] !== undefined) {
+            if (typeof contents[variable] === 'object' && !Array.isArray(contents[variable]) && contents[variable] !== null) {
+                for (let parameter in contents[variable]) {
+                    if (player.variables[variable][parameter] === undefined) {
+                        player.variables[variable][parameter] = contents[variable][parameter];
+                    }
+                }
+            }
+            
             delete contents[variable];
         }
     }
@@ -874,7 +882,6 @@ function screenUpdate(diff) {
                     }
                 }
             }
-            
 
         } else { // If there is a grind rn and it has been started, count down the timer
             if (playerGrind.clicked) {
@@ -936,7 +943,10 @@ function screenUpdate(diff) {
                     }
 
                     let resourceName = playerGrind.current;
-                    player.resources[resourceName].amount += playerGrind.grindAmount;
+                    
+                    if (player.resources[resourceName]) {
+                        player.resources[resourceName].amount += playerGrind.grindAmount;
+                    }
 
                     playerGrind.current = "";
                     playerGrind.clicked = false;
@@ -1146,7 +1156,10 @@ function unactiveGrind(area, diff) {
                     }
 
                     let resourceName = grind.current;
-                    player.resources[resourceName].amount += grind.grindAmount;
+
+                    if (player.resources[resourceName]) {
+                        player.resources[resourceName].amount += grind.grindAmount;
+                    }
 
                     grind.current = "";
                     grind.clicked = false;
