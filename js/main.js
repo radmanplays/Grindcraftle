@@ -449,6 +449,11 @@ function craftResource(resource) {
         
     }
 
+    if (resource.message && !resource.hasShownMessage && player.resources[resource.name].amount === 0) {
+        showMessage(resource.message);
+        resource.hasShownMessage = true;
+    }
+
     player.resources[name].amount += amount;
 
     if (resource.unlockGrinds) {
@@ -469,11 +474,6 @@ function craftResource(resource) {
                 leftBottomDivEl.children[i].style.display = "block";
             }
         }
-    }
-
-    if (resource.message && !resource.hasShownMessage) {
-        showMessage(resource.message);
-        resource.hasShownMessage = true;
     }
 
     if (resource.runFunction) {
