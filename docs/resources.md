@@ -32,6 +32,7 @@ Individual resources can have these properties:
  - image: Link/path to the image that belongs to this resource. Can be a link to an image on Google or a path to an image downloaded on your PC. To use a path, move the image to the "images" folder in your "Grindcraft-Game-Maker" folder. Then, you just change the text to "images/\<name\>.\<file type\>" (for example: images/dirt.png).
    - Images should be about 100 to 300 pixels in size. 
  - amount: **optional**. Set an amount of the item that you will have when you start the game. Useful for testing.
+ - limit: **optional**. Set a max amount of the item. If you reach that amount, you won't be able to get more of the item.
 
 ### Important:
 

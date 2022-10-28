@@ -152,6 +152,11 @@ function addResources(contents) {
     for (let resource in contents) {
         if (player.resources[resource]) {
             player.resources[resource].image = contents[resource].image;
+            
+            if (!player.resources[resource].limit && (contents[resource].limit || contents[resource].limit === 0)) {
+                player.resources[resource].limit = contents[resource].limit;
+            }
+
             delete contents[resource];
         }
     }
@@ -176,7 +181,7 @@ function addVariables(contents) {
                     }
                 }
             }
-            
+
             delete contents[variable];
         }
     }
@@ -318,7 +323,11 @@ function setupGame() {
         }
 
         divEl.addEventListener("mouseover", () => {
-            showRecipe(craft, name);
+            if (player.resources[craftName].limit || player.resources[craftName].limit === 0) {
+                showRecipe(craft, name + " (Max: " + ((player.resources[craftName].limit > 999999999) ? shortenNumber(player.resources[craftName].limit) : player.resources[craftName].limit) + ")");
+            } else {
+               showRecipe(craft, name); 
+            }
         });
 
         divEl.addEventListener("mouseout", hideRecipe);
@@ -429,7 +438,7 @@ function craftResource(resource) {
     let cost = resource.cost;
     let amount = (resource.amount) ? resource.amount : 1;
 
-    if (!canAfford(cost)) {
+    if (!canAfford(cost, name, amount)) {
         return;
     }
 
@@ -440,30 +449,26 @@ function craftResource(resource) {
         
     }
 
-    if (resource.type === "craft") {
-        player.resources[name].amount += amount;
+    player.resources[name].amount += amount;
 
-        if (resource.unlockGrinds) {
-            for (let i = 0; i < area.grinds.length; i++) {
-                let grind = area.grinds[i];
-                if (resource.unlockGrinds.indexOf(grind.name) > -1) {
-                    grind.unlocked = true;
-                    leftTopDivEl.children[i].style.display = "block";
-                }
+    if (resource.unlockGrinds) {
+        for (let i = 0; i < area.grinds.length; i++) {
+            let grind = area.grinds[i];
+            if (resource.unlockGrinds.indexOf(grind.name) > -1) {
+                grind.unlocked = true;
+                leftTopDivEl.children[i].style.display = "block";
             }
         }
+    }
 
-        if (resource.unlockAreas) {
-            for (let i = 0; i < player.areaList.length; i++) {
-                let areaID = player.areaList[i];
-                if (player[areaID] && player.resources[resource.name].amount > 0) {
-                    player[areaID].unlocked = true;
-                    leftBottomDivEl.children[i].style.display = "block";
-                }
+    if (resource.unlockAreas) {
+        for (let i = 0; i < player.areaList.length; i++) {
+            let areaID = player.areaList[i];
+            if (player[areaID] && player.resources[resource.name].amount > 0) {
+                player[areaID].unlocked = true;
+                leftBottomDivEl.children[i].style.display = "block";
             }
         }
-    } else {
-        player.resources[name].amount -= amount;
     }
 
     if (resource.message && !resource.hasShownMessage) {
@@ -472,13 +477,15 @@ function craftResource(resource) {
     }
 
     if (resource.runFunction) {
-        if (Array.isArray(resource.runFunction)) {
-            let args = Object.assign([], resource.runFunction);
-            let functionName = args.shift();
-
-            window[functionName].apply(window, args);
-        } else {
-            window[resource.runFunction]();
+        for (let func of resource.runFunction) {
+            if (Array.isArray(func)) {
+                let args = Object.assign([], func);
+                let functionName = args.shift();
+    
+                window[functionName].apply(window, args);
+            } else {
+                window[func]();
+            }
         }
     }
 }
@@ -507,7 +514,23 @@ function showRecipe(resource, name) {
         imgEl.className = "craft-image";
         imgEl.src = player.resources[matName].image;
         pEl.className = "craft-text";
-        pEl.innerText = (matAmount) ? matAmount : "";
+
+        if (matAmount) {
+            pEl.innerText = (matAmount > 999999999) ? shortenNumber(matAmount) : matAmount;
+        } else {
+            pEl.innerText = "";
+        }
+
+        if (pEl.innerText.length > 7) {
+            pEl.style.right = "1px";
+            pEl.style.fontSize = "10px";
+        } else if (pEl.innerText.length > 4) {
+            pEl.style.right = "2px";
+            pEl.style.fontSize = "12px";
+        } else {
+            pEl.style.right = "";
+            pEl.style.fontSize = "";
+        }
 
         if (matAmount < 0) {
             pEl.innerText = -matAmount;
@@ -530,10 +553,10 @@ function showRecipe(resource, name) {
                     craftEl.style.borderRight = "solid 4px #cb493b";
                     craftEl.style.borderBottom = "solid 4px #cb493b";
                 } else {
-                    craftEl.style.borderRight = "solid 4px #862e28";
-                    craftEl.style.borderBottom = "solid 4px #862e28";
-                    craftEl.style.borderTop = "solid 4px #cb493b";
-                    craftEl.style.borderLeft = "solid 4px #cb493b";
+                    craftEl.style.borderRight = "solid 3px #862e28";
+                    craftEl.style.borderBottom = "solid 3px #862e28";
+                    craftEl.style.borderTop = "solid 3px #cb493b";
+                    craftEl.style.borderLeft = "solid 3px #cb493b";
                 }
             }
         }
@@ -748,9 +771,17 @@ function switchArea(areaID) {
     player.switchArea = true;
 }
 
-function canAfford(cost) {
+function canAfford(cost, name, amount) {
     for (let mat of cost) {
         if (player.resources[mat[0]].amount < mat[1] || player.resources[mat[0]].amount === 0) {
+            return false;
+        }
+    }
+
+    let playerResource = player.resources[name];
+
+    if (playerResource.limit || playerResource.limit === 0) {
+        if (playerResource.amount + amount > playerResource.limit) {
             return false;
         }
     }
@@ -764,51 +795,6 @@ function screenUpdate(diff) {
     }
 
     let area = player[player.areaList[player.currentArea]];
-
-    for (let i = 0; i < rightDivEl.children.length; i++) {
-        let craft = rightDivEl.children[i];
-        let craftAmountTextEl = craft.children[1];
-        let craftName = craft.getAttribute("data-name");
-        craftAmountTextEl.innerText = (player.resources[craftName].amount) ? player.resources[craftName].amount : "";
-
-        let playerCraft = area.crafts[i];
-
-        if (playerCraft.autoCraft && player.resources[playerCraft.name].amount > 0 && player.enableAutobuys) { // If you have crafted the item and it has an autoCraft
-            
-            let craftList = Object.assign([], area.crafts); // Create a list of all the crafts and reverse it
-            craftList.reverse();
-
-            for (let resource of playerCraft.autoCraft) { // For every resource in the autoCraft
-
-                if (!resource[2]) {
-                    resource[2] = 0;
-                }
-
-                resource[2] += diff;
-
-                if (resource[2] > resource[1]) {
-                    for (let craftCheck of craftList) { // For every craft in the craftList
-                        if (craftCheck.name === resource[0]) { // If the name of the craft in the craftList is the same as the name of the resource
-                            
-                            for (let i = 0; i < Math.floor(resource[2] / (resource[1] ? resource[1] : 1)); i++) {
-                                craftResource(craftCheck); // Craft the resource
-                            }
-
-                            break;
-                        }
-                    }
-
-                    resource[2] = 0;
-                }
-            }
-        }
-
-        if (canAfford(area.crafts[i].cost) && area.crafts[i].type !== "display") {
-            craft.className = "craft-div-afford";
-        } else {
-            craft.className = "craft-div";
-        }
-    }
 
     for (let i = 0; i < leftTopDivEl.children.length; i++) {
         let grind = leftTopDivEl.children[i];
@@ -848,6 +834,23 @@ function screenUpdate(diff) {
                         }
                     }
                 }
+
+                if (!player.resources[resource.id]) {
+                    continue;
+                }
+
+                let playerResource = player.resources[resource.id];
+
+                if (playerResource.limit || playerResource.limit === 0) {
+                    if (playerResource.amount + amountList[j] > playerResource.limit) {
+                        totalProbability -= resource.probability;
+                        resourceList.pop();
+                        probabilityList.pop();
+                        imageList.pop();
+                        idList.pop();
+                        amountList.pop();
+                    }
+                }
             }
 
             let randomChoice = Math.random() * totalProbability;
@@ -882,6 +885,7 @@ function screenUpdate(diff) {
                     }
                 }
             }
+            
 
         } else { // If there is a grind rn and it has been started, count down the timer
             if (playerGrind.clicked) {
@@ -902,7 +906,7 @@ function screenUpdate(diff) {
                                     amount = randomRange(amount[0], amount[1]);
                                 }
 
-                                player.resources[guaranteedResource.name].amount += Math.round(amount * playerGrind.grindAmount);
+                                player.resources[guaranteedResource.name].amount += randomRound(amount * playerGrind.grindAmount);
                             }
                         }
 
@@ -945,7 +949,7 @@ function screenUpdate(diff) {
                     let resourceName = playerGrind.current;
                     
                     if (player.resources[resourceName]) {
-                        player.resources[resourceName].amount += playerGrind.grindAmount;
+                        player.resources[resourceName].amount += randomRound(playerGrind.grindAmount);
                     }
 
                     playerGrind.current = "";
@@ -972,6 +976,75 @@ function screenUpdate(diff) {
                     }
                 }
             }
+        }
+    }
+
+    for (let resourceName in player.resources) {
+        let resource = player.resources[resourceName];
+         
+        if (resource.limit !== undefined && resource.amount > resource.limit) {
+            resource.amount = resource.limit;
+        }
+    }
+
+    for (let i = 0; i < rightDivEl.children.length; i++) {
+        let craft = rightDivEl.children[i];
+        let craftAmountTextEl = craft.children[1];
+        let craftName = craft.getAttribute("data-name");
+
+        if (player.resources[craftName].amount) {
+            craftAmountTextEl.innerText = (player.resources[craftName].amount > 999999999) ? shortenNumber(player.resources[craftName].amount) : player.resources[craftName].amount;
+        } else {
+            craftAmountTextEl.innerText = "";
+        }
+
+        if (craftAmountTextEl.innerText.length > 7) {
+            craftAmountTextEl.style.right = "1px";
+            craftAmountTextEl.style.fontSize = "10px";
+        } else if (craftAmountTextEl.innerText.length > 4) {
+            craftAmountTextEl.style.right = "2px";
+            craftAmountTextEl.style.fontSize = "12px";
+        } else {
+            craftAmountTextEl.style.right = "";
+            craftAmountTextEl.style.fontSize = "";
+        }
+
+        let playerCraft = area.crafts[i];
+
+        if (playerCraft.autoCraft && player.resources[playerCraft.name].amount > 0 && player.enableAutobuys) { // If you have crafted the item and it has an autoCraft
+            
+            let craftList = Object.assign([], area.crafts); // Create a list of all the crafts and reverse it
+            craftList.reverse();
+
+            for (let resource of playerCraft.autoCraft) { // For every resource in the autoCraft
+
+                if (!resource[2]) {
+                    resource[2] = 0;
+                }
+
+                resource[2] += diff;
+
+                if (resource[2] > resource[1]) {
+                    for (let craftCheck of craftList) { // For every craft in the craftList
+                        if (craftCheck.name === resource[0]) { // If the name of the craft in the craftList is the same as the name of the resource
+                            
+                            for (let i = 0; i < Math.floor(resource[2] / (resource[1] ? resource[1] : 1)); i++) {
+                                craftResource(craftCheck); // Craft the resource
+                            }
+
+                            break;
+                        }
+                    }
+
+                    resource[2] = 0;
+                }
+            }
+        }
+
+        if (canAfford(area.crafts[i].cost, playerCraft.name, (playerCraft.amount) ? playerCraft.amount : 1) && area.crafts[i].type !== "display") {
+            craft.className = "craft-div-afford";
+        } else {
+            craft.className = "craft-div";
         }
     }
 
@@ -1048,6 +1121,18 @@ function unactiveGrind(area, diff) {
                         }
                     }
                 }
+
+                let playerResource = player.resources[resource.id];
+
+                if (playerResource.limit || playerResource.limit === 0) {
+                    if (playerResource.amount + amountList[j] > playerResource.limit) {
+                        totalProbability -= resource.probability;
+                        resourceList.pop();
+                        probabilityList.pop();
+                        idList.pop();
+                        amountList.pop();
+                    }
+                }
             }
 
             let randomChoice = Math.random() * totalProbability;
@@ -1097,7 +1182,9 @@ function unactiveGrind(area, diff) {
             }
             
 
-        } else { // If there is a grind rn and it has been started, count down the timer
+        }
+        
+        else { // If there is a grind rn and it has been started, count down the timer
             if (grind.clicked) {
                 grind.currentGrindTime += diff / 1000;
 
@@ -1115,7 +1202,7 @@ function unactiveGrind(area, diff) {
                                     amount = randomRange(amount[0], amount[1]);
                                 }
 
-                                player.resources[guaranteedResource.name].amount += Math.round(amount * grind.grindAmount);
+                                player.resources[guaranteedResource.name].amount += randomRound(amount * grind.grindAmount);
                             }
                         }
 
@@ -1158,7 +1245,7 @@ function unactiveGrind(area, diff) {
                     let resourceName = grind.current;
 
                     if (player.resources[resourceName]) {
-                        player.resources[resourceName].amount += grind.grindAmount;
+                        player.resources[resourceName].amount += randomRound(grind.grindAmount);
                     }
 
                     grind.current = "";
@@ -1202,7 +1289,58 @@ function unactiveGrind(area, diff) {
 }
 
 function randomRange(min, max) {
-    let randomNumber = Math.round(Math.random() * (max - min)) + min;
+    let randomNumber = Math.floor(Math.random() * (max + 1 - min)) + min;
+    return randomRound(randomNumber);
+}
 
-    return randomNumber;
+function randomFloat(min, max) {
+    let randomNumber = Math.random() * (max - min) + min;
+    return Number(randomNumber.toFixed(2));
+}
+
+function randomRound(number) {
+    numFloor = Math.floor(number);
+    let numRest = number - numFloor;
+
+    if (numRest > Math.random()) {
+        numFloor++;
+    }
+
+    return numFloor;
+}
+
+function shortenNumber(number) {
+    if (number >= 1e20) {
+        number = number.toString();
+        let text = number[0] + ".";
+
+        for (let i = 2; i < 4; i++) {
+            if (number[i] !== "e" && number[i] !== "+") {
+                text += number[i];
+            } else {
+                break;
+            }
+        }
+
+        if (text === number[0] + ".") {
+            text += "00";
+        }
+
+        let numLength = number.slice(number.indexOf("e") + 2);
+
+        text += "e" + numLength;
+
+        return text;
+    } else {
+        number = number.toString();
+        let text = number[0] + ".";
+
+        for (let i = 1; i < 3; i++) {
+            text += number[i];
+        }
+
+        text += "e" + (number.length - 1);
+
+        return text;
+    }
 }

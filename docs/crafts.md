@@ -51,7 +51,7 @@ Individual crafts can have these properties:
  - message: **optional**. Sends a message on screen the first time you craft this item. Can be anything you want!
  - unlockGrinds: **optional**. A list of grinds that will be unlocked by crafting this item. (For example: `unlockGrinds: ["forest", "farm"],`).
  - unlockAreas: **optional**. A list of area IDs of the areas that will be unlocked by crafting this item. (For example: `unlockAreas: ["b", "i"],`).
- - autoCraft: **optional**. A list of items to be bought and the time in milliseconds (1 thousandth of a second) to wait between every buy. (For example: `autoCraft: [["planks", 10], ["door", 100]],`).
+ - autoCraft: **optional**. A list of items to be crafted and the time in milliseconds (1 thousandth of a second) to wait between every craft. (For example: `autoCraft: [["planks", 10], ["door", 100]],`).
    - This will craft 1x planks every 10 milliseconds (100x every second) and 1x door every 100 ms (10x every second).
- - runFunction (Advanced): **optional**. A list where the first value is the function name and the next values are the arguments for the function.
-   - Example: `runFunction: ["calculateMults", 2, 5, 1.5]` will run the function `calculateMults` with the arguments `(2, 5, 1.5)`.
+ - runFunction (Advanced): **optional**. A list of lists, where the first value in the lists is the function name and the next values are the arguments for the function.
+   - Example: `runFunction: [["calculateMults", 2, 5, 1.5], ["upgradeShovel"]],` will run the function `calculateMults` with the arguments `(2, 5, 1.5)`, and the function `upgradeShovel` with no arguments.
