@@ -68,6 +68,8 @@ let copySaveButtonEl = document.querySelector("#copySaveButton");
 let resetSaveButtonEl = document.querySelector("#resetSaveButton");
 let saveButtonEl = document.querySelector("#saveButton");
 
+let toolVersionTextEl = document.querySelector("#toolVersion");
+
 messageButtonEl.addEventListener("click", hideMessage);
 settingsButtonEl.addEventListener("click", hideSettings);
 settingsTopButtonEl.addEventListener("click", showSettings);
@@ -75,6 +77,8 @@ copySaveButtonEl.addEventListener("click", copySave);
 importSaveButtonEl.addEventListener("click", importSave);
 resetSaveButtonEl.addEventListener("click", resetSave);
 saveButtonEl.addEventListener("click", saveGame);
+
+toolVersionTextEl.innerHTML = `(Version ${player.toolVersion})`;
 
 // Setting values
 maxFPSInputEl.addEventListener("mousemove", () => {
