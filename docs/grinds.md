@@ -81,7 +81,7 @@ Individual resources can have these properties:
    - Example: `time: [["stone pickaxe", 0.3, 3], ["wooden pickaxe", 0.5, 2], ["", 0.8],`
      - With this, it would take 0.3 seconds to grind the resource with a stone pickaxe, and you would get 3 items. With a wooden pickaxe, it would take 0.5 seconds and you would get 2. Lastly, with just your hand, it would take 0.8 seconds and you would only get 1.
      - **Important:** Always put the best tool first in the list, or else a weaker tool will be used instead!
- - image: Either the name of a resource or a link/path to the image that you want to use.
+ - image: **optional**. Either the name of a resource or a link/path to the image that you want to use. Defaults to the resource name.
  - mults: **optional**. Pretty similar to the `time` property. The first value in the list should be the name of the item that gives the boost. The second value in the list should be a number that divides the time it will take to grind the resource (For example: 2 will halve the time). The third value (**optional**) should be a number that multiplies the amount of items you get from the grind (For example: 2 will double the amount).
    - Example: `mult: [["farmer", 1.5, 3], ["bone meal", 2]],`
    - With this, the farmer would make the grind take 1.5x less time and give 3x more items, and the bone meal would make it take 2x less time.

@@ -51,12 +51,10 @@ addArea("c",                                            // Function for adding a
                 {
                     id: "stick",
                     time: [["", 0.5]],
-                    image: "stick",
                     probability: 50,
                 },
                 {
                     id: "dirt",
-                    image: "dirt",
                     time: [["", 0.6]],
                     probability: 50,
                 },

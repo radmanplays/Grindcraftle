@@ -167,15 +167,18 @@ function addResources(contents) {
         if (contents[resource].image === "" || contents[resource].image === "blank") contents[resource].image = "images/system/blank.png";
         if (contents[resource].image === "wip") contents[resource].image = "images/system/wip.png";
 
+        // If the resource is not already in the player object: check if it has an amount property. If not: set it to 0
+        if (!player.resources[resource]) {
+            if (contents[resource].amount === undefined) contents[resource].amount = 0;
+        }
+
         // If the resource is already in the player object ...
-        if (player.resources[resource]) {
+        else {
             // ... update image
             player.resources[resource].image = contents[resource].image;
             
             // ... update limit
-            if (!player.resources[resource].limit && (contents[resource].limit || contents[resource].limit === 0)) {
-                player.resources[resource].limit = contents[resource].limit;
-            }
+            if (contents[resource].limit !== undefined) player.resources[resource].limit = contents[resource].limit;
 
             // Remove the resource from the contents object
             delete contents[resource];
@@ -245,6 +248,26 @@ function setupGame() {
     iconLinkEl.href = gameInfo.icon;
 
     // Show area-buttons
+    setUpAreaButtons();
+
+    // Show grinds of current area
+    setUpGrinds();
+
+    // Show crafts of current area
+    setUpCrafts();
+
+    // Unlock areas and grinds
+    setUpUnlockedAreas();
+
+    // Set the heigh of the area-button div
+    leftBottomDivEl.style.height = (window.innerHeight - 60 - 45.2 - leftTopDivEl.clientHeight) + "px";
+
+    // You have now switched to a new area / set up the game
+    player.switchArea = false;
+}
+
+// Show area-buttons
+function setUpAreaButtons() {
     for (let areaID of player.areaList) {
         let area = player[areaID];
 
@@ -272,7 +295,10 @@ function setupGame() {
             areaDivEl.style.display = "none";
         }
     }
+}
 
+// Show grinds of current area
+function setUpGrinds() {
     let area = player[player.areaList[player.currentArea]];
     let areaGrinds = area.grinds;
 
@@ -280,6 +306,12 @@ function setupGame() {
     for (let i = 0; i < areaGrinds.length; i++) {
         let grind = areaGrinds[i];
         let grindName = grind.name;
+
+        // For every resource in the grind
+        for (let resource of grind.resources) {
+            // If the image isn't set, set it to the resource id
+            if (resource.image === undefined) resource.image = resource.id;
+        }
 
         // Create elements
         let grindDivEl = document.createElement("div");
@@ -344,7 +376,11 @@ function setupGame() {
             grindDivEl.style.display = "none";
         }
     }
+}
 
+// Show crafts of current area
+function setUpCrafts() {
+    let area = player[player.areaList[player.currentArea]];
     let areaCrafts = area.crafts;
 
     // Show crafts of current area
@@ -359,9 +395,10 @@ function setupGame() {
         image = (player.resources[image]) ? player.resources[image].image : image;
 
         // If the amount isn't set, set it to 0
-        if (!player.resources[craftName].amount) {
-            player.resources[craftName].amount = 0;
-        }
+        if (!player.resources[craftName].amount) player.resources[craftName].amount = 0;
+
+        // If the type isn't set, set it to "craft"
+        if (!craft.type) craft.type = "craft";
 
         // Create elements
         let divEl = document.createElement("div");
@@ -437,7 +474,10 @@ function setupGame() {
             }
         }
     }
+}
 
+// Unlock areas and grinds
+function setUpUnlockedAreas() {
     // Make a list of all areas except the current
     let checkAreaList = Object.assign([], player.areaList);
     checkAreaList.splice(player.currentArea, 1);
@@ -466,12 +506,6 @@ function setupGame() {
             }
         }
     }
-
-    // Set the heigh of the area-button div
-    leftBottomDivEl.style.height = (window.innerHeight - 60 - 45.2 - leftTopDivEl.clientHeight) + "px";
-
-    // You have now switched to a new area / set up the game
-    player.switchArea = false;
 }
 
 // Grind a resource

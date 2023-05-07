@@ -40,9 +40,9 @@ Individual crafts can have these properties:
  - displayName: **optional**. Used if you want the name of the upgrade to be different from the resource name. Can be anything you want!
  - displayImage: **optional**. Used if you want the image of the upgrade to be different from the resource image. Can be either a resource name or a link/path.
  - desc: The description of the upgrade. Can be anything you want!
- - type: The type of the craft. Can be either "display" or "craft".
+ - type: **optional**. The type of the craft. Can be either "display" or "craft".
    - display: The item can't be crafted, but instead just displays how many of that item you have.
-   - craft: The item can be crafted.
+   - craft (default): The item can be crafted.
  - amount: **optional**. How many of the item you get when crafting it. Default value is 1.
  - cost: A list of all the different resources required to craft this item. The first value in the list is the resource name and the second is the amount required.
    - Example: `cost: [["planks", 3], ["stick", 2]],`
