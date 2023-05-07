@@ -11,9 +11,9 @@ grinds: [
         background: "images/grinds/overworld.png",      // Background image of the grind
         resources: [                                    // List of the different resources in the grind
             {
-                id: "stick",                            // Name/id of resource        
+                id: "stick",                            // Name of resource        
                 time: [["", 0.5]],                      // Time to grind with different tools
-                image: "stick",                         // Image of the resource, can either be a link/path or a resource name
+                image: "stick",                         // Image of the resource, can be either a link/path or a resource name
                 probability: 50,                        // The higher the number, the more likely you are to get this resource
             },
             {
@@ -63,9 +63,9 @@ Inside the `resources: [],` property, you have to add all the different resource
 Resources are stored in the following format:
 ```
 {
-    id: "name",                             // Name/id of resource        
+    id: "name",                             // Name of resource        
     time: [["tool", time, amount]],         // Time to grind with different tools
-    image: "name/link/path",                // Image of the resource. Can either be a link/path or a resource name
+    image: "name/link/path",                // Image of the resource. Can be either a link/path or a resource name
     mults: [["tool/item", speed, amount]],  // Speed and amount multiplications that will be applied when you have unlocked different items
     probability: 50,                        // The higher the number, the more likely you are to get this resource
 },
@@ -73,16 +73,16 @@ Resources are stored in the following format:
 
 Individual resources can have these properties:
 
- - id: The name/id of the resource. Has to be the same as an already existing resource!
+ - id: The name of the resource. Has to be the same as an already existing resource!
  - time: A list of all the tools that can grind this resource, how long it takes for them to grind it and how much of the resource you get!
-   1. The first value in the list should be the name/id of the tool. (For example: `["wooden pickaxe"]`). You can also use `""` for when you just use your hand.
+   1. The first value in the list should be the name of the tool. (For example: `["wooden pickaxe"]`). You can also use `""` for when you just use your hand.
    2. The second value in the list should be the time in seconds to grind this resource. (For example: `["wooden pickaxe", 0.5]`).
    3. **optional**. The third value in the list should be the amount of the resource that you get when using this tool. (For example: `["wooden pickaxe", 0.5, 2]`).
    - Example: `time: [["stone pickaxe", 0.3, 3], ["wooden pickaxe", 0.5, 2], ["", 0.8],`
-     - With this, it would take 0.3 seconds to grind the resource with a stone pickaxe, and you would get 3 of it. With a wooden pickaxe, it would take 0.5 seconds and you would get 2. Lastly, with only your hand, it would take 0.8 seconds and you would only get 1.
+     - With this, it would take 0.3 seconds to grind the resource with a stone pickaxe, and you would get 3 items. With a wooden pickaxe, it would take 0.5 seconds and you would get 2. Lastly, with just your hand, it would take 0.8 seconds and you would only get 1.
      - **Important:** Always put the best tool first in the list, or else a weaker tool will be used instead!
  - image: Either the name of a resource or a link/path to the image that you want to use.
- - mults: **optional**. Pretty similar to the `time` property. The first value in the list should be the name/id of the item that gives the boost. The second value in the list should be a number that divides the time it will take to grind the resource (For example: 2 will halve the time). The third value (**optional**) should be a number that multiplies the amount of items you get from the grind (For example: 2 will double the amount).
+ - mults: **optional**. Pretty similar to the `time` property. The first value in the list should be the name of the item that gives the boost. The second value in the list should be a number that divides the time it will take to grind the resource (For example: 2 will halve the time). The third value (**optional**) should be a number that multiplies the amount of items you get from the grind (For example: 2 will double the amount).
    - Example: `mult: [["farmer", 1.5, 3], ["bone meal", 2]],`
    - With this, the farmer would make the grind take 1.5x less time and give 3x more items, and the bone meal would make it take 2x less time.
    - **Important:** Here, the items can be placed in any order that you want, since all the boosts will be added anyways.
@@ -98,13 +98,13 @@ Individual resources can have these properties:
     customResources: {                                          // Tells the grind what resources you will get from this grind
         guaranteed: [                                           // You are guaranteed to get these resources when grinding
             {
-                name: "raw beef",                               // Name/id of the resource
+                name: "raw beef",                               // Name of the resource
                 amount: [1, 2],                                 // Amount of the resource that you will get. [1, 2] means that you will get a random amount from 1 to 2
             },
         ],
         random: [                                               // You will get only 1 of these resources when grinding
             {
-                name: "leather",                                // Name/id
+                name: "leather",                                // Name
                 amount: 0,                                      // Amount
                 probability: 60,                                // Probability of getting this resource
             },
@@ -114,15 +114,19 @@ Individual resources can have these properties:
                 probability: 40,
             },
         ],
+        randomRolls: 1,                                         // The amount of rolls for random items
     },
 },
 ```
 
  - As we can see, the `customResources` property is divided into `guaranteed` and `random` resources.
    - The `guaranteed` resources is a list of different resources that you are guaranteed to get from that item in the grind. The guaranteed resources can have two properties:
-     - name: Name/id of the resource
+     - name: Name of the resource
      - amount: The amount of the resource that you will get (before tool or mults buffs are added). The amount can either be just a number, or a list with two numbers (smallest number first). If the amount is a list, a random number will be selected, from the lowest to the highest number. (For example: `amount: [3, 8],` will give from 3 to 8 of the resource).
-   - The `random` resources is also a list of different resources but you will only get one of them. The random resources can have three properties:
-     - name: Name/id of the resource
+   - The `random` resources is a list of different resources where one of them will be chosen at random. The random resources can have three properties:
+     - name: Name of the resource
      - amount: The amount of the resource that you will get (before tool or mults buffs are added). The amount can either be just a number, or a list with two numbers (smallest number first).
      - probability: A number that tells how likely the resource is to be chosen. Higher number = higher chance of getting it.
+   - In addition to this, you can also define the amount of rolls, using the `randomRolls` property.
+     - `randomRolls` defaults to 1 and is **optional**.
+     - If `randomRolls` is set to 3, you would get 3 of the random resources from the grind.

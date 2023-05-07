@@ -22,6 +22,10 @@ a {
     color: rgb(0, 66, 120);
 }
 
+a:hover {
+    text-decoration: none;
+}
+
 .top-div {
     position: absolute;
     width: 100%;
