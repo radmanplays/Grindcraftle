@@ -121,12 +121,12 @@ function addArea(id, contents) {
     if (!player.unlockedGrinds[id]) player.unlockedGrinds[id] = [];
 
     // If the area is unlocked: add it to the unlocked areas list
-    if (contents.unlocked) player.unlockedAreas.push(id);
+    if (contents.unlocked && !player.unlockedAreas.includes(id)) player.unlockedAreas.push(id);
 
     // For every grind in the area
     for (let grind of contents.grinds) {
         // If the grind is unlocked: add it to the unlocked grinds list
-        if (grind.unlocked) player.unlockedGrinds[id].push(grind.name);
+        if (grind.unlocked && !player.unlockedGrinds[id].includes(grind.name)) player.unlockedGrinds[id].push(grind.name);
     }
 }
 
@@ -191,12 +191,12 @@ function getSavedData(save) {
         player.savedGameVersion = save.gameVersion;
     }
 
-    if (save.unlockAreas !== undefined && Array.isArray(save.unlockAreas)) {
-        player.unlockAreas = save.unlockAreas;
+    if (save.unlockedAreas !== undefined && Array.isArray(save.unlockedAreas)) {
+        player.unlockedAreas = save.unlockedAreas;
     }
 
-    if (save.unlockGrinds !== undefined && typeof save.unlockGrinds === "object" && !Array.isArray(save.unlockGrinds)) {
-        player.unlockGrinds = save.unlockGrinds;
+    if (save.unlockedGrinds !== undefined && typeof save.unlockedGrinds === "object" && !Array.isArray(save.unlockedGrinds)) {
+        player.unlockedGrinds = save.unlockedGrinds;
     }
 
     player.saveGotten = true;
@@ -514,17 +514,19 @@ function setUpCrafts() {
 
 // Unlock areas and grinds
 function setUpUnlockedAreas() {
-    // Make a list of all areas except the current
+    // Make a list of all areas
     let checkAreaList = Object.assign([], player.areaList);
-    checkAreaList.splice(player.currentArea, 1);
 
     // For every area in the checklist
     for (let areaID of checkAreaList) {
+        // Get index
+        let i = checkAreaList.indexOf(areaID);
+
         // If the area is in the unlockedAreas list ...
         if (player.unlockedAreas.includes(areaID)) {
             // ... unlock the area and show it
             player[areaID].unlocked = true;
-            leftBottomDivEl.children[j].style.display = "block";
+            leftBottomDivEl.children[i].style.display = "block";
         }
     }
 }
