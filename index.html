@@ -128,11 +128,17 @@
 <script src="js/areas.js"></script>
 
 <script>
+    // Set up game
     setupGame();
+
+    // Check if there is a saved game version and tool version
+    if (player.savedGameVersion === undefined) player.savedGameVersion = player.gameInfo.gameVersion;
+    if (player.savedToolVersion === undefined) player.savedToolVersion = player.toolVersion;
 
     // Fix things that have been changed between updates
     onLoad(player.savedGameVersion);
 
+    // Start the screen update function
     screenUpdate(Date.now() - player.lastScreenUpdate);
 </script>
 

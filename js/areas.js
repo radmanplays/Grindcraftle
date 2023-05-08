@@ -110,5 +110,9 @@ addArea("c",                                            // Function for adding a
 
 // Function that will be runned when the website is loaded
 function onLoad(oldVersion) {
-    
+    // If the game version in the player's save is not the same as the current game version:
+    if (oldVersion !== player.gameInfo.version) {
+        // Write it to the console
+        console.log(oldVersion);
+    }
 }

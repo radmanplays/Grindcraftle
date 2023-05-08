@@ -1,11 +1,15 @@
 // Player object
 let player = {
     currentArea: 0,
-    toolVersion: "1.0",
+    toolVersion: "1.1",
     areaList: [],
     lastScreenUpdate: Date.now(),
     resources: {},
-    variables: {},
+    variables: {
+        normal: {},
+        static: {},
+        temp: {},
+    },
     currentTicks: 0,
     currentTime: 0,
     maxFPS: 100,
@@ -146,7 +150,7 @@ function getSavedData(save) {
     }
 
     if (save.variables !== undefined && typeof save.variables === "object" && !Array.isArray(save.variables)) {
-        player.variables = save.variables;
+        player.variables.normal = save.variables;
     }
 
     if (save.maxFPS !== undefined && typeof save.maxFPS === "number") {
@@ -253,23 +257,22 @@ function addVariables(contents) {
 
     // For every variable
     for (let variable in contents) {
-        // If the variable is already in the player object
-        if (player.variables[variable] !== undefined) {
+        // Get the variable type
+        let varType = contents[variable].type;
+
+        // If the variable is a normal type, and it is already in the player object
+        if (varType === "normal" && player.variables.normal[variable] !== undefined) {
             // If the variable is an object ...
-            if (typeof contents[variable] === 'object' && !Array.isArray(contents[variable]) && contents[variable] !== null) {
+            if (typeof contents[variable].value === 'object' && !Array.isArray(contents[variable].value) && contents[variable].value !== null) {
                 // ... update the values inside the object
-                updateVariableObject(player.variables[variable], contents[variable]);
+                updateVariableObject(player.variables.normal[variable], contents[variable].value);
             }
-
-            // Remove the variable from the contents object
-            delete contents[variable];
         }
-    }
 
-    // Add the remaining variables to the player pbject
-    player.variables = {
-        ...player.variables,
-        ...contents,
+        // Else, if the variable is static or temp: add it to the player object
+        else if (varType === "static" || varType === "temp" || varType === "normal") {
+            player.variables[varType][variable] = contents[variable].value;
+        }
     }
 }
 
@@ -282,6 +285,7 @@ function updateVariableObject(path, object) {
             //... add the key to the variable in the player object
             path[key] = object[key];
         }
+
         // If it does exist and the value is an object ...
         else if (typeof object[key] === 'object' && !Array.isArray(object[key]) && object[key] !== null) {
             //... check trough the new object
@@ -949,7 +953,7 @@ function copySave() {
         unlockedAreas: player.unlockedAreas,
         unlockedGrinds: player.unlockedGrinds,
 
-        variables: player.variables,
+        variables: player.variables.normal,
     });
 
     copyText = encodeSave(copyText);
@@ -1013,7 +1017,7 @@ function saveGame() {
         unlockedAreas: player.unlockedAreas,
         unlockedGrinds: player.unlockedGrinds,
 
-        variables: player.variables,
+        variables: player.variables.normal,
     }));
 }
 

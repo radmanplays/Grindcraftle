@@ -14,11 +14,12 @@ If you want, you can just copy this into your [areas.js](/js/areas.js) file and 
 ```
 // Game Info
 
-let gameInfo = {
+setGameInfo({
     name: "My Grindcraft Game",                         // The name of your game!
+    version: "0.1",                                     // The current version of your game!
     icon: "images/system/blank.png",                    // Link or path to an icon image for your game!
     ID: "myGrindcraftGame",                             // Your game's ID! Should be unique for every game!
-};
+});
 
 // Resources
 
