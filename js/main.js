@@ -15,6 +15,8 @@ let player = {
     autoSave: true,
     saveGotten: false,
     switchArea: false,
+    unlockedAreas: [],
+    unlockedGrinds: {},
 };
 
 let bodyEl = document.querySelector("body");
@@ -22,9 +24,9 @@ let titleEl = document.querySelector("title");
 let iconLinkEl = document.querySelector("#iconLink");
 
 // Stop selecting and dragging of text
-function pauseEvent(e){
+function pauseEvent(e) {
     if (e.preventDefault) e.preventDefault();
-    e.returnValue=false;
+    e.returnValue = false;
     return false;
 }
 
@@ -110,19 +112,44 @@ function addArea(id, contents) {
     contents.lastUpdate = Date.now();
     player[id] = contents;
     player.areaList.push(id);
+
+    // Adds the area to the unlockedGrinds property
+    if (!player.unlockedGrinds[id]) player.unlockedGrinds[id] = [];
+
+    // If the area is unlocked: add it to the unlocked areas list
+    if (contents.unlocked) player.unlockedAreas.push(id);
+
+    // For every grind in the area
+    for (let grind of contents.grinds) {
+        // If the grind is unlocked: add it to the unlocked grinds list
+        if (grind.unlocked) player.unlockedGrinds[id].push(grind.name);
+    }
+}
+
+// Set the game info
+function setGameInfo(info) {
+    player.gameInfo = info;
 }
 
 // Get saved data
 function getSavedData(save) {
-    if (save.resources) {
+    // Checks if the save is encoded or not
+    if (save.indexOf("{") !== -1) {
+        save = JSON.parse(save);
+    }
+    else {
+        save = JSON.parse(decodeSave(save));
+    }
+
+    if (save.resources !== undefined && typeof save.resources === "object" && !Array.isArray(save.resources)) {
         player.resources = save.resources;
     }
 
-    if (save.variables) {
+    if (save.variables !== undefined && typeof save.variables === "object" && !Array.isArray(save.variables)) {
         player.variables = save.variables;
     }
 
-    if (save.maxFPS) {
+    if (save.maxFPS !== undefined && typeof save.maxFPS === "number") {
         player.maxFPS = save.maxFPS;
         maxFPSInputEl.value = player.maxFPS;
         maxFPSLabelEl.innerText = player.maxFPS;
@@ -148,17 +175,43 @@ function getSavedData(save) {
         autoSaveInputEl.checked = player.autoSave;
     }
 
-    if (save.currentArea === 0 || save.currentArea) {
+    if (save.currentArea !== undefined && typeof save.currentArea === "number") {
         player.currentArea = save.currentArea;
+    }
+
+    if (save.toolVersion !== undefined && typeof save.toolVersion === "string") {
+        player.savedToolVersion = save.toolVersion;
+    }
+
+    if (save.gameVersion !== undefined && typeof save.gameVersion === "string") {
+        player.savedGameVersion = save.gameVersion;
+    }
+
+    if (save.unlockAreas !== undefined && Array.isArray(save.unlockAreas)) {
+        player.unlockAreas = save.unlockAreas;
+    }
+
+    if (save.unlockGrinds !== undefined && typeof save.unlockGrinds === "object" && !Array.isArray(save.unlockGrinds)) {
+        player.unlockGrinds = save.unlockGrinds;
     }
 
     player.saveGotten = true;
 }
 
+// Encode save
+function encodeSave(str) {
+    return btoa(str);
+}
+
+// Decode save
+function decodeSave(str) {
+    return atob(str);
+}
+
 // Add resources to the player object
 function addResources(contents) {
-    if (!player.saveGotten && localStorage[gameInfo.ID]) {
-        getSavedData(JSON.parse(localStorage[gameInfo.ID]));
+    if (!player.saveGotten && localStorage[player.gameInfo.ID]) {
+        getSavedData(localStorage[player.gameInfo.ID]);
     }
 
     // For every resource
@@ -178,7 +231,7 @@ function addResources(contents) {
             player.resources[resource].image = contents[resource].image;
             
             // ... update limit
-            if (contents[resource].limit !== undefined) player.resources[resource].limit = contents[resource].limit;
+            player.resources[resource].limit = contents[resource].limit;
 
             // Remove the resource from the contents object
             delete contents[resource];
@@ -194,8 +247,8 @@ function addResources(contents) {
 
 // Add variables to the player object
 function addVariables(contents) {
-    if (!player.saveGotten && localStorage[gameInfo.ID]) {
-        getSavedData(JSON.parse(localStorage[gameInfo.ID]));
+    if (!player.saveGotten && localStorage[player.gameInfo.ID]) {
+        getSavedData(localStorage[player.gameInfo.ID]);
     }
 
     // For every variable
@@ -244,8 +297,8 @@ function setupGame() {
     leftTopDivEl.innerHTML = "";
     leftBottomDivEl.innerHTML = "";
 
-    titleEl.innerText = gameInfo.name;
-    iconLinkEl.href = gameInfo.icon;
+    titleEl.innerText = player.gameInfo.name;
+    iconLinkEl.href = player.gameInfo.icon;
 
     // Show area-buttons
     setUpAreaButtons();
@@ -371,6 +424,15 @@ function setUpGrinds() {
         grindDivEl.appendChild(grindDivGradientEl);
         leftTopDivEl.appendChild(grindDivEl);
 
+        let areaID = player.areaList[player.currentArea];
+
+        // If the grind is in the unlockedGrinds list ...
+        if (player.unlockedGrinds[areaID].includes(grindName)) {
+            // ... unlock the grind and show it
+            grind.unlocked = true;
+            leftTopDivEl.children[i].style.display = "block";
+        }
+
         // If the grind isn't unlocked: Hide
         if (!grind.unlocked) {
             grindDivEl.style.display = "none";
@@ -443,36 +505,6 @@ function setUpCrafts() {
         divEl.appendChild(imgEl);
         divEl.appendChild(pEl);
         rightDivEl.appendChild(divEl);
-
-        // If the craft unlocks grinds when bought
-        if (craft.unlockGrinds) {
-            // For every grind
-            for (let j = 0; j < area.grinds.length; j++) {
-                let grind = area.grinds[j];
-
-                // If the grind is unlocked from the craft and you have crafted it ...
-                if (craft.unlockGrinds.indexOf(grind.name) > -1 && player.resources[craft.name].amount > 0) {
-                    // ... unlock the grind and show it
-                    grind.unlocked = true;
-                    leftTopDivEl.children[j].style.display = "block";
-                }
-            }
-        }
-
-        // If the craft unlocks areas when bought
-        if (craft.unlockAreas) {
-            // For every area
-            for (let j = 0; j < player.areaList.length; j++) {
-                let areaID = player.areaList[j];
-
-                // If the area is unlocked from the craft and you have crafted it ...
-                if (craft.unlockAreas.indexOf(areaID) > -1 && player.resources[craft.name].amount > 0) {
-                    // ... unlock the area and show it
-                    player[areaID].unlocked = true;
-                    leftBottomDivEl.children[j].style.display = "block";
-                }
-            }
-        }
     }
 }
 
@@ -484,26 +516,11 @@ function setUpUnlockedAreas() {
 
     // For every area in the checklist
     for (let areaID of checkAreaList) {
-        let areaCrafts = player[areaID].crafts;
-
-        // For every craft in that area
-        for (let i = 0; i < areaCrafts.length; i++) {
-            let craft = areaCrafts[i];
-
-            // If the craft unlocks any areas
-            if (craft.unlockAreas) {
-                // For every area
-                for (let j = 0; j < player.areaList.length; j++) {
-                    let areaID = player.areaList[j];
-
-                    // If the area is unlocked from the craft and you have crafted it ...
-                    if (craft.unlockAreas.indexOf(areaID) > -1 && player.resources[craft.name].amount > 0) {
-                        // ... unlock the area and show it
-                        player[areaID].unlocked = true;
-                        leftBottomDivEl.children[j].style.display = "block";
-                    }
-                }
-            }
+        // If the area is in the unlockedAreas list ...
+        if (player.unlockedAreas.includes(areaID)) {
+            // ... unlock the area and show it
+            player[areaID].unlocked = true;
+            leftBottomDivEl.children[j].style.display = "block";
         }
     }
 }
@@ -592,6 +609,8 @@ function craftResource(resource) {
     // Craft the resource
     player.resources[name].amount += amount;
 
+    let areaID = player.areaList[player.currentArea];
+
     // If the resource unlocks grinds
     if (resource.unlockGrinds) {
         // For every grind
@@ -603,6 +622,10 @@ function craftResource(resource) {
                 // ... unlock the grind and show it
                 grind.unlocked = true;
                 leftTopDivEl.children[i].style.display = "block";
+
+                // Add grind to the unlockedGrindsList
+                let unlockedGrindList = player.unlockedGrinds[areaID];
+                if (!unlockedGrindList.includes(grind.name)) unlockedGrindList.push(grind.name);
             }
         }
     }
@@ -618,6 +641,9 @@ function craftResource(resource) {
                 // ... unlock the area and show it
                 player[areaID].unlocked = true;
                 leftBottomDivEl.children[i].style.display = "block";
+
+                // Add area to the unlockedAreas list
+                if (!player.unlockedAreas.includes(areaID)) player.unlockedAreas.push(areaID);
             }
         }
     }
@@ -910,14 +936,23 @@ function copySave() {
     // Get the text to copy
     let copyText = JSON.stringify({
         resources: player.resources,
+
         maxFPS: player.maxFPS,
         showGrindMats: player.showGrindMats,
         showCraftRecipes: player.showCraftRecipes,
         enableAutobuys: player.enableAutobuys,
         autoSave: player.autoSave,
+
         currentArea: player.currentArea,
+        toolVersion: player.toolVersion,
+        gameVersion: player.gameInfo.version,
+        unlockedAreas: player.unlockedAreas,
+        unlockedGrinds: player.unlockedGrinds,
+
         variables: player.variables,
     });
+
+    copyText = encodeSave(copyText);
 
     // Create a textfield and set the text
     let copyEl = document.createElement("textarea");
@@ -939,16 +974,8 @@ function importSave() {
     }
 
     // Get the value and clear the input element
-    let text = importSaveinputEl.value;
+    let saveImport = importSaveinputEl.value;
     importSaveinputEl.value = "";
-
-    // Turn the text into an object
-    let saveImport = JSON.parse(text);
-
-    // If the save is invalid: Return
-    if (!saveImport.resources) {
-        return;
-    }
 
     // Get saved data from save and set up game
     getSavedData(saveImport);
@@ -963,7 +990,7 @@ function resetSave() {
     // If true: Reset save and reload the page
     if (check === "Y") {
         player.autoSave = false;
-        localStorage.removeItem(gameInfo.ID);
+        localStorage.removeItem(player.gameInfo.ID);
         location.reload();
     }
 }
@@ -971,16 +998,23 @@ function resetSave() {
 // Save game
 function saveGame() {
     // Update the localStorage
-    localStorage[gameInfo.ID] = JSON.stringify({
+    localStorage[player.gameInfo.ID] = encodeSave(JSON.stringify({
         resources: player.resources,
+
         maxFPS: player.maxFPS,
         showGrindMats: player.showGrindMats,
         showCraftRecipes: player.showCraftRecipes,
         enableAutobuys: player.enableAutobuys,
         autoSave: player.autoSave,
-        variables: player.variables,
+
         currentArea: player.currentArea,
-    });
+        toolVersion: player.toolVersion,
+        gameVersion: player.gameInfo.version,
+        unlockedAreas: player.unlockedAreas,
+        unlockedGrinds: player.unlockedGrinds,
+
+        variables: player.variables,
+    }));
 }
 
 // Switch area

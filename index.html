@@ -129,6 +129,10 @@
 
 <script>
     setupGame();
+
+    // Fix things that have been changed between updates
+    onLoad(player.savedGameVersion);
+
     screenUpdate(Date.now() - player.lastScreenUpdate);
 </script>
 
