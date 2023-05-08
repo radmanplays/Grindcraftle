@@ -181,7 +181,7 @@ Some other useful functions that you can use in your game are the `randomRange`,
 
 ### Saves
 
-The save codes are encoded to Base64, using the `encodeSave` function. The code is the saved to `localStorage.<Your game ID>`.
+The save codes are encoded to Base64, using the `encodeSave` function. The code is then saved to `localStorage.<Your game ID>`.
 When you import a save, the code is then decoded using the `decodeSave` function, before the data is added to the player object.
 
-These functions can be used if you want to manually change or check your save, by copying your save from the settings and running the function in the console: `decodeSave("<Your save code>");`
+These functions can be used if you want to manually change or check your save, by copying your save from the settings and running this function in the console: `decodeSave("<Your save code>");`
