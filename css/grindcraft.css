@@ -237,7 +237,7 @@ a:hover {
 .recipe-cost-div {
     display: flex;
     flex-wrap: wrap;
-    padding: 10px 0 10px 10px;
+    padding: 10px 0 10px 12px;
 }
 
 .recipe-desc {
