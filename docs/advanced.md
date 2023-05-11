@@ -132,10 +132,11 @@ You might also notice the `type` property. This just tells the tool how to save 
  - `temp` is basically the same as static, meaning it won't save when closing the game, and will change by changing the value in the `addVariables` function. The difference is just that `temp` variables are allowed to be changed, while `static` variables should not.
 
 To access a variable, you just type `player.variables.<variableType>.<variableName>`!
+- For example: `player.variables.normal.coolVariableName` would return `"Test"`.
 
 **Notes:**
- - Any new properties added to variable objects will be added automatically by the tool.
- - Any new values added to variable arrays, will not be added automatically.
+ - Any new properties added to variable objects will be added automatically to the player save by the tool.
+ - Any new values added to variable arrays, will not be added automatically to the player save.
 
 ### Official functions & custom functions
 
