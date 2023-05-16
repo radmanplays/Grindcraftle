@@ -1,5 +1,10 @@
 # Changelog
 
+### v1.1.1 - 5/16/23:
+ - More code cleanups
+ - Small bug fixes
+
+
 ### v1.1 - 5/8/23:
  - Cleaned up some code
  - Added Base64-encoding for save codes

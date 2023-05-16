@@ -1,7 +1,7 @@
 // Player object
 let player = {
     currentArea: 0,
-    toolVersion: "1.1",
+    toolVersion: "1.1.1",
     areaList: [],
     lastScreenUpdate: Date.now(),
     resources: {},
@@ -399,7 +399,7 @@ function setUpGrinds() {
         progressbarEl.className = "grind-progressbar";
 
         imgDivEl.addEventListener("click", () => {
-            grindResource(grindDivEl, i);
+            grindResource(area, grindDivEl, i);
         });
 
         grindDivEl.addEventListener("mouseover", () => {
@@ -532,9 +532,7 @@ function setUpUnlockedAreas() {
 }
 
 // Grind a resource
-function grindResource(grind, grindID) {
-    // Get the current area
-    let area = player[player.areaList[player.currentArea]];
+function grindResource(area, grind, grindID, playerGrind) {
 
     // If you are currently grinding something: Return
     if (area.grinds[grindID].current === "" || area.grinds[grindID].currentGrindTime > 0) {
@@ -545,6 +543,8 @@ function grindResource(grind, grindID) {
     let resource = area.grinds[grindID].resources[area.grinds[grindID].resourceID];
     let totalTime = 0;
     let toolUsed = "";
+
+    if (playerGrind) resource = playerGrind.resources[playerGrind.resourceID];
 
     // For every tool in that resource
     for (let tool of resource.time) {
@@ -571,11 +571,14 @@ function grindResource(grind, grindID) {
 
     // Start grinding the resource
     area.grinds[grindID].clicked = true;
-    grind.children[2].children[0].children[1].style.display = "block";
-    grind.children[2].children[0].children[1].firstElementChild.style.width = 0;
 
-    grind.children[1].style.display = "block";
-    grind.children[1].src = (toolUsed) ? player.resources[toolUsed].image : "images/system/hand.png";
+    if (grind) {
+        grind.children[2].children[0].children[1].style.display = "block";
+        grind.children[2].children[0].children[1].firstElementChild.style.width = 0;
+
+        grind.children[1].style.display = "block";
+        grind.children[1].src = (toolUsed) ? player.resources[toolUsed].image : "images/system/hand.png";
+    }
 
     area.grinds[grindID].currentGrindTime = 0;
     area.grinds[grindID].totalGrindTime = totalTime;
@@ -1060,6 +1063,266 @@ function canAfford(cost, name, amount) {
     return true;
 }
 
+// Check through a resource in the grind and update the list of the resources that can be grinded
+function checkGrindResource(resource, lists, j) {
+    // For every tool in that resource
+    for (let tool of resource.time) {
+        // If you have the tool ...
+        if ((player.resources[tool[0]] && player.resources[tool[0]].amount > 0) || tool[0] === "") {
+            // Add the resource to the lists and break
+            lists.totalProbability += resource.probability;
+            lists.resourceList.push(resource.id);
+            lists.probabilityList.push(resource.probability);
+            lists.imageList.push(resource.image);
+            lists.idList.push(j);
+            lists.amountList.push((tool[2]) ? tool[2] : 1);
+            break;
+        }
+    }
+
+    // If there are any mults for this resource
+    if (resource.mults) {
+        // For every mult
+        for (let mult of resource.mults) {
+            // If you have the mult ...
+            if (mult[0] && mult[2] && player.resources[mult[0]] && player.resources[mult[0]].amount > 0) {
+                // Multiply the amount by the mult
+                lists.amountList[j] *= mult[2];
+            }
+        }
+    }
+
+    // If the resource has custom resources: Return
+    if (resource.customResources) return;
+
+    // Get the resource
+    let playerResource = player.resources[resource.id];
+
+    // If the resource has a limit ...
+    if (playerResource.limit || playerResource.limit === 0) {
+        // ... and the resource is currently at the limit ...
+        if (playerResource.amount >= playerResource.limit) {
+            // ... remove the resource from the list
+            lists.totalProbability -= resource.probability;
+            lists.resourceList.pop();
+            lists.probabilityList.pop();
+            lists.imageList.pop();
+            lists.idList.pop();
+            lists.amountList.pop();
+        }
+    }
+}
+
+// Find a new resource to grind
+function findResourceToGrind(area, playerGrind, grind, i) {
+    // Create lists
+    let lists = {
+        totalProbability: 0,
+        resourceList: [],
+        probabilityList: [],
+        amountList: [],
+        imageList: [],
+        idList: [],
+    };
+
+    playerGrind.currentGrindTime = 0;
+
+    // For every grind resource
+    for (let j = 0; j < playerGrind.resources.length; j++) {
+        let resource = playerGrind.resources[j];
+
+        // Check if the resource can be grinded and add to lists
+        checkGrindResource(resource, lists, j);
+    }
+
+    // Get a random number
+    let randomChoice = Math.random() * lists.totalProbability;
+    let randomImage = "";
+
+    // For every resource in the list
+    for (let j = 0; j < lists.probabilityList.length; j++) {
+        // If the resource is selected ...
+        if (randomChoice < lists.probabilityList[j]) {
+            // ... add the resource info to the grind and break
+            playerGrind.current = lists.resourceList[j];
+            playerGrind.resourceID = lists.idList[j];
+            randomImage = lists.imageList[j];
+            playerGrind.grindAmount = lists.amountList[j];
+            break;
+        }
+
+        // If the resource is not selected: Subtract the chance from the randomChoice variable
+        randomChoice -= lists.probabilityList[j];
+    }
+
+    // If there is a grind element
+    if (grind) {
+        // Get the grind image element
+        let grindImage = grind.children[2].children[0].children[0];
+
+        // Add the image to the grind image element
+        if (player.resources[randomImage]) {
+            grindImage.src = player.resources[randomImage].image;
+        } else {
+            grindImage.src = randomImage;
+        }
+    }
+
+    // Check if the auto-grind has been unlocked
+    if (playerGrind.auto) checkAutoGrind(area, playerGrind, grind, i);
+}
+
+// Check if a grind can be auto-grinded
+function checkAutoGrind(area, playerGrind, grind, i) {
+    // For every resource in the auto-list
+    for (let auto of playerGrind.auto) {
+        // If the resource is unlocked ...
+        if (player.resources[auto].amount > 0) {
+            // ... auto-grind the grind and break
+            grindResource(area, grind, i, playerGrind);
+            break;
+        }
+    }
+}
+
+// Give the guaranteed resources from the grind
+function addGuaranteedResources(playerGrind, guaranteedResourceList) {
+    // For every guaranteed resource
+    for (let guaranteedResource of guaranteedResourceList) {
+        // Get the amount
+        let amount = guaranteedResource.amount;
+
+        // If the amount is an array: Choose a random number between that amount
+        if (Array.isArray(amount)) amount = randomRange(amount[0], amount[1]);
+
+        // Add the amount to the resource
+        player.resources[guaranteedResource.name].amount += randomRound(amount * playerGrind.grindAmount);
+    }
+}
+
+// Give the random resources from the grind
+function addRandomResources(playerGrind, grindResource, randomResourceList) {
+    let rolls = 1;
+    let totalProbability = 0;
+    let resourceList = [];
+    let probabilityList = [];
+    let amountList = [];
+
+    // Update random rolls
+    if (grindResource.customResources.randomRolls !== undefined) rolls = grindResource.customResources.randomRolls;
+    if (rolls < 0) rolls = 0;
+
+    // For every random resource in the list
+    for (let randomResource of randomResourceList) {
+        // Add to the resource list
+        totalProbability += randomResource.probability;
+        resourceList.push(randomResource.name);
+        probabilityList.push(randomResource.probability);
+        amountList.push(randomResource.amount);
+    }
+    
+    // For every roll
+    for (let i = 0; i < rolls; i++) {
+        // Get a random number between 0 and totalProbability
+        let randomChoice = Math.random() * totalProbability;
+
+        randomResourceRoll(playerGrind, randomChoice, resourceList, probabilityList, amountList);
+    }
+}
+
+// Give a random resouce from the random resources of the custom grind
+function randomResourceRoll(playerGrind, randomChoice, resourceList, probabilityList, amountList) {
+    // For every resource
+    for (let j = 0; j < probabilityList.length; j++) {
+        // If the resource is selected
+        if (randomChoice < probabilityList[j]) {
+            // Get the amount
+            let amount = amountList[j];
+
+            // If the amount is an array: Choose a random number between that amount
+            if (Array.isArray(amount)) {
+                amount = randomRange(amount[0], amount[1]);
+            }
+
+            // Add the amount to the resource and break
+            player.resources[resourceList[j]].amount += randomRound(amount * playerGrind.grindAmount);
+            break;
+        }
+
+        // Change the randomChoice by the probability of the resource
+        randomChoice -= probabilityList[j];
+    }
+}
+
+// Finish the grind and give the resources
+function finishGrind(playerGrind, grind) {
+    // Get resource info
+    let grindResource = playerGrind.resources[playerGrind.resourceID];
+
+    // If there are custom resources
+    if (grindResource.customResources) {
+        // If there are any guaranteed custom resources
+        if (grindResource.customResources.guaranteed) {
+            let guaranteedResourceList = grindResource.customResources.guaranteed;
+
+            // Add the resources to the player
+            addGuaranteedResources(playerGrind, guaranteedResourceList);
+        }
+
+        // If there are any random resources
+        if (grindResource.customResources.random) {
+            let randomResourceList = grindResource.customResources.random;
+
+            // Add the resources to the player
+            addRandomResources(playerGrind, grindResource, randomResourceList);
+        }
+    }
+    // If there aren't any custom resources ...
+    else {
+        let resourceName = playerGrind.current;
+    
+        // ... give the current resource
+        if (player.resources[resourceName]) {
+            player.resources[resourceName].amount += randomRound(playerGrind.grindAmount);
+        }
+    }
+
+    // Reset the grind
+    playerGrind.current = "";
+    playerGrind.clicked = false;
+    playerGrind.currentGrindTime = 0;
+    playerGrind.grindAmount = 0;
+
+    if (grind) {
+        grind.children[2].children[0].children[1].style.display = "none";
+        grind.children[2].children[0].children[0].src = "images/system/blank.png";
+
+        grind.children[1].style.display = "none";
+        grind.children[1].src = "images/system/blank.png";
+    }
+}
+
+// Update the time remaining on the grind
+function countDownGrindTimer(area, playerGrind, grind, diff, i) {
+    // If the grind is clicked
+    if (playerGrind.clicked) {
+        // Update the grind time
+        playerGrind.currentGrindTime += diff / 1000;
+
+        // When the grind is done, give the resource
+        if (playerGrind.currentGrindTime > playerGrind.totalGrindTime) {
+            finishGrind(playerGrind, grind);
+        }
+        // If the grind is not done, update the progressbar
+        else if (grind) {
+            let progressbarEl = grind.children[2].children[0].children[1].firstElementChild;
+            progressbarEl.style.width = Math.round(playerGrind.currentGrindTime / playerGrind.totalGrindTime * 100) + "%";
+        }
+    }
+    // If there is a grind right now and it hasn't been started, check if the auto-grind has been unlocked
+    else if (playerGrind.auto) checkAutoGrind(area, playerGrind, grind, i);
+}
+
 // Screen update
 function screenUpdate(diff) {
     // Get the time of the last screen update
@@ -1082,243 +1345,13 @@ function screenUpdate(diff) {
         let grindCurrent = playerGrind.current;
 
         // If there are no grinds right now, find a new one
-        if (grindCurrent === "") {
-            // Create lists
-            let totalProbability = 0;
-            let resourceList = [];
-            let probabilityList = [];
-            let amountList = [];
-            let imageList = [];
-            let idList = [];
-
-            playerGrind.currentGrindTime = 0;
-
-            // For every grind resource
-            for (let j = 0; j < playerGrind.resources.length; j++) {
-                let resource = playerGrind.resources[j];
-
-                // For every tool in that resource
-                for (let tool of resource.time) {
-                    // If you have the tool ...
-                    if ((player.resources[tool[0]] && player.resources[tool[0]].amount > 0) || tool[0] === "") {
-                        // Add the tool to the lists and break
-                        totalProbability += resource.probability;
-                        resourceList.push(resource.id);
-                        probabilityList.push(resource.probability);
-                        imageList.push(resource.image);
-                        idList.push(j);
-                        amountList.push((tool[2]) ? tool[2] : 1);
-                        break;
-                    }
-                }
-
-                // If there are any mults for this resource
-                if (resource.mults) {
-                    // For every mult
-                    for (let mult of resource.mults) {
-                        // If you have the mult ...
-                        if (mult[0] && mult[2] && player.resources[mult[0]] && player.resources[mult[0]].amount > 0) {
-                            // Multiply the amount by the mult
-                            amountList[j] *= mult[2];
-                        }
-                    }
-                }
-
-                // If the resource doesn't exist: Continue
-                if (!player.resources[resource.id]) {
-                    continue;
-                }
-
-                // Get the resource
-                let playerResource = player.resources[resource.id];
-
-                // If the resource has a limit ...
-                if (playerResource.limit || playerResource.limit === 0) {
-                    // ... and the amount is exceeded while grinding ...
-                    if (playerResource.amount + amountList[j] > playerResource.limit) {
-                        // ... remove the resource from the list
-                        totalProbability -= resource.probability;
-                        resourceList.pop();
-                        probabilityList.pop();
-                        imageList.pop();
-                        idList.pop();
-                        amountList.pop();
-                    }
-                }
-            }
-
-            // Get a random number
-            let randomChoice = Math.random() * totalProbability;
-            let randomImage = "";
-
-            // For every resource in the list
-            for (let j = 0; j < probabilityList.length; j++) {
-                // If the resource is selected ...
-                if (randomChoice < probabilityList[j]) {
-                    // ... add the resource info to the grind and break
-                    playerGrind.current = resourceList[j];
-                    playerGrind.resourceID = idList[j];
-                    randomImage = imageList[j];
-                    playerGrind.grindAmount = amountList[j];
-                    break;
-                }
-
-                // If the resource is not selected: Subtract the chance from the randomChoice variable
-                randomChoice -= probabilityList[j];
-            }
-
-            // Get the grind image element
-            let grindImage = grind.children[2].children[0].children[0];
-
-            // Add the image to the grind image element
-            if (player.resources[randomImage]) {
-                grindImage.src = player.resources[randomImage].image;
-            } else {
-                grindImage.src = randomImage;
-            }
-
-            // Check if the auto-grind has been unlocked
-            if (playerGrind.auto) {
-                // For every resource in the auto-list
-                for (let auto of playerGrind.auto) {
-                    // If the resource is unlocked ...
-                    if (player.resources[auto].amount > 0) {
-                        // ... auto-grind the grin and break
-                        grindResource(grind, i);
-                        break;
-                    }
-                }
-            }
-            
-
+        if (!grindCurrent) {
+            findResourceToGrind(area, playerGrind, grind, i);
         }
+
         // If there is a grind right now and it has been started, count down the timer
-        else {
-            // If the grind is clicked
-            if (playerGrind.clicked) {
-                // Add the time to the progressbar
-                playerGrind.currentGrindTime += diff / 1000;
-                let progressbarEl = grind.children[2].children[0].children[1].firstElementChild;
-
-                // When the grind is done, give the resource
-                if (playerGrind.currentGrindTime > playerGrind.totalGrindTime) {
-                    // Get resource info
-                    let grindResource = playerGrind.resources[playerGrind.resourceID];
-
-                    // If there are custom resources
-                    if (grindResource.customResources) {
-                        // If there are any guaranteed custom resources
-                        if (grindResource.customResources.guaranteed) {
-                            let guaranteedResourceList = grindResource.customResources.guaranteed;
-
-                            // For every guaranteed resource
-                            for (let guaranteedResource of guaranteedResourceList) {
-                                // Get the amount
-                                let amount = guaranteedResource.amount;
-
-                                // If the amount is an array: Choose a random number between that amount
-                                if (Array.isArray(amount)) {
-                                    amount = randomRange(amount[0], amount[1]);
-                                }
-
-                                // Add the amount to the resource
-                                player.resources[guaranteedResource.name].amount += randomRound(amount * playerGrind.grindAmount);
-                            }
-                        }
-
-                        // If there are any random resources
-                        if (grindResource.customResources.random) {
-                            let randomResourceList = grindResource.customResources.random;
-
-                            let rolls = 1;
-                            let totalProbability = 0;
-                            let resourceList = [];
-                            let probabilityList = [];
-                            let amountList = [];
-
-                            if (grindResource.customResources.randomRolls !== undefined) {
-                                rolls = grindResource.customResources.randomRolls;
-                                if (rolls < 0) rolls = 0;
-                            }
-
-                            // For every random resource in the list
-                            for (let randomResource of randomResourceList) {
-                                // Add to the resource list
-                                totalProbability += randomResource.probability;
-                                resourceList.push(randomResource.name);
-                                probabilityList.push(randomResource.probability);
-                                amountList.push(randomResource.amount);
-                            }
-                            
-                            // For every roll
-                            for (let i = 0; i < rolls; i++) {
-                                // Get a random number between 0 and totalProbability
-                                let randomChoice = Math.random() * totalProbability;
-
-                                // For every resource
-                                for (let j = 0; j < probabilityList.length; j++) {
-                                    // If the resource is selected
-                                    if (randomChoice < probabilityList[j]) {
-                                        // Get the amount
-                                        let amount = amountList[j];
-
-                                        // If the amount is an array: Choose a random number between that amount
-                                        if (Array.isArray(amount)) {
-                                            amount = randomRange(amount[0], amount[1]);
-                                        }
-
-                                        // Add the amount to the resource and break
-                                        player.resources[resourceList[j]].amount += randomRound(amount * playerGrind.grindAmount);
-                                        break;
-                                    }
-
-                                    // Change the randomChoice by the probability of the resource
-                                    randomChoice -= probabilityList[j];
-                                }
-                            }
-                        }
-                    }
-                    // If there aren't any custom resources ...
-                    else {
-                        let resourceName = playerGrind.current;
-                    
-                        // ... get the current resource
-                        if (player.resources[resourceName]) {
-                            player.resources[resourceName].amount += randomRound(playerGrind.grindAmount);
-                        }
-                    }
-
-                    // Reset the grind
-                    playerGrind.current = "";
-                    playerGrind.clicked = false;
-                    playerGrind.currentGrindTime = 0;
-                    playerGrind.grindAmount = 0;
-
-                    grind.children[2].children[0].children[1].style.display = "none";
-                    grind.children[2].children[0].children[0].src = "images/system/blank.png";
-
-                    grind.children[1].style.display = "none";
-                    grind.children[1].src = "images/system/blank.png";
-
-                }
-                // If the grind is not done, update the progressbar
-                else {
-                    progressbarEl.style.width = Math.round(playerGrind.currentGrindTime / playerGrind.totalGrindTime * 100) + "%";
-                }
-            }
-            // If there is a grind right now and it hasn't been started, check if the auto-grind has been unlocked
-            else {
-                if (playerGrind.auto) {
-                    // For every resource in the auto-list
-                    for (let auto of playerGrind.auto) {
-                        // If you have the resource: auto-grind the resource and break
-                        if (player.resources[auto].amount > 0) {
-                            grindResource(grind, i);
-                            break;
-                        }
-                    }
-                }
-            }
+        else if (player.unlockedGrinds[player.areaList[player.currentArea]].includes(playerGrind.name)) {
+            countDownGrindTimer(area, playerGrind, grind, diff, i);
         }
     }
 
@@ -1361,43 +1394,7 @@ function screenUpdate(diff) {
         // Get the current craft
         let playerCraft = area.crafts[i];
 
-        // If the craft has an autocraft and you have the resource
-        if (playerCraft.autoCraft && player.resources[playerCraft.name].amount > 0 && player.enableAutobuys) {
-            // Create a list of all the crafts and reverse it
-            let craftList = Object.assign([], area.crafts);
-            craftList.reverse();
-
-            // For every resource in the autoCraft
-            for (let resource of playerCraft.autoCraft) {
-                // If there is no time counter: Create one with value 0
-                if (!resource[2]) {
-                    resource[2] = 0;
-                }
-
-                // Add diff to the time counter
-                resource[2] += diff;
-
-                // If the time counter is higher than the requierement time
-                if (resource[2] > resource[1]) {
-                    // For every craft in the craftList
-                    for (let craftCheck of craftList) {
-                        // If the name of the craft in the craftList is the same as the name of the resource
-                        if (craftCheck.name === resource[0]) {
-                            // Repeat for every time the item can be crafted
-                            for (let i = 0; i < Math.floor(resource[2] / (resource[1] ? resource[1] : 1)); i++) {
-                                // Craft the resource
-                                craftResource(craftCheck);
-                            }
-
-                            break;
-                        }
-                    }
-
-                    // Set time counter to 0
-                    resource[2] = 0;
-                }
-            }
-        }
+        checkAutoCrafts(area, playerCraft, diff);
 
         // If you can afford the craft: Change the display
         if (canAfford(area.crafts[i].cost, playerCraft.name, (playerCraft.amount) ? playerCraft.amount : 1) && area.crafts[i].type !== "display") {
@@ -1408,26 +1405,20 @@ function screenUpdate(diff) {
     }
 
     // If the current area has an update function: Run it
-    if (area.update) {
-        area.update(diff);
-    }
+    if (area.update) area.update(diff);
 
     // For every area in the areaList
     for (let i of player.areaList) {
         let area = player[i];
 
         // If the area is the current area or it doesn't support unactive grinding: Continue
-        if (player.areaList.indexOf(i) === player.currentArea || !area.updateWhileUnactive) {
-            continue;
-        }
+        if (player.areaList.indexOf(i) === player.currentArea || !area.updateWhileUnactive) continue;
 
         // Do an unactive grind for that area
-        unactiveGrind(area, diff);
+        unactiveGrind(area, i, diff);
 
         // If the area has an update function: Run it
-        if (area.update) {
-            area.update(diff);
-        }
+        if (area.update) area.update(diff);
     }
 
     // Every 0.5 seconds: Update FPS counter and auto-save game
@@ -1440,9 +1431,7 @@ function screenUpdate(diff) {
         player.currentTime = 0;
         player.currentTicks = 0;
 
-        if (player.autoSave) {
-            saveGame();
-        }
+        if (player.autoSave) saveGame();
     }
 
     // Get wait time and set timeout for next screen update
@@ -1452,278 +1441,71 @@ function screenUpdate(diff) {
         screenUpdate(Date.now() - player.lastScreenUpdate);
     }, (waitTime > 0) ? waitTime : 0);
 }
+
+// Check auto crafts of craft
+function checkAutoCrafts(area, playerCraft, diff) {
+    // If the craft doesn't have an autocraft or you don't have the resource: Return
+    if (!playerCraft.autoCraft || player.resources[playerCraft.name].amount <= 0 || !player.enableAutobuys) return;
+
+    // Create a list of all the crafts and reverse it
+    let craftList = Object.assign([], area.crafts);
+    craftList.reverse();
+
+    // For every resource in the autoCraft
+    for (let resource of playerCraft.autoCraft) {
+        updateAutoCraftResource(resource, craftList, diff);
+    }
+}
+
+// Update time of auto craft and craft resource if possible
+function updateAutoCraftResource(resource, craftList, diff) {
+    // If there is no time counter: Create one with value 0
+    if (!resource[2]) resource[2] = 0;
+
+    // Add diff to the time counter
+    resource[2] += diff;
+
+    // If the time counter is less than the requirement time: Return
+    if (resource[2] < resource[1]) return;
+
+    // For every craft in the craftList
+    for (let craftCheck of craftList) {
+        // If the name of the craft in the craftList is not the same as the name of the resource: Continue
+        if (craftCheck.name !== resource[0]) continue;
+
+        // Repeat for every time the item can be crafted
+        for (let i = 0; i < Math.floor(resource[2] / (resource[1] ? resource[1] : 1)); i++) {
+            // Craft the resource
+            craftResource(craftCheck);
+        }
+
+        break;
+    }
+
+    // Set time counter to 0
+    resource[2] = 0;
+}
+
 // Unactive grind
-function unactiveGrind(area, diff) {
+function unactiveGrind(area, areaID, diff) {
     // For every grind in the area
-    for (let grind of area.grinds) {
+    for (let i in area.grinds) {
+        let grind = area.grinds[i];
         let grindCurrent = grind.current;
 
         // If there are no grinds right now, find a new one
-        if (grindCurrent === "") {
-            // Create lists
-            let totalProbability = 0;
-            let resourceList = [];
-            let probabilityList = [];
-            let amountList = [];
-            let idList = [];
-
-            grind.currentGrindTime = 0;
-
-            // For every resource in the grind
-            for (let j = 0; j < grind.resources.length; j++) {
-                let resource = grind.resources[j];
-
-                // For every tool in the resource
-                for (let tool of resource.time) {
-                    // If you have the tool ...
-                    if ((player.resources[tool[0]] && player.resources[tool[0]].amount > 0) || tool[0] === "") {
-                        // ... add it to the lists and break
-                        totalProbability += resource.probability;
-                        resourceList.push(resource.id);
-                        probabilityList.push(resource.probability);
-                        idList.push(j);
-                        amountList.push((tool[2]) ? tool[2] : 1);
-                        break;
-                    }
-                }
-
-                // If the resource has any mults
-                if (resource.mults) {
-                    // For every mult
-                    for (let mult of resource.mults) {
-                        // If you have the mult ...
-                        if (mult[0] && mult[2] && player.resources[mult[0]] && player.resources[mult[0]].amount > 0) {
-                            // Multiply it with the amountlist
-                            amountList[j] *= mult[2];
-                        }
-                    }
-                }
-
-                // Get the resource
-                let playerResource = player.resources[resource.id];
-
-                // If the resource has a limit ...
-                if (playerResource.limit || playerResource.limit === 0) {
-                    // ... and the amount exceeds the limit ...
-                    if (playerResource.amount + amountList[j] > playerResource.limit) {
-                        // ... remove the resource from the list
-                        totalProbability -= resource.probability;
-                        resourceList.pop();
-                        probabilityList.pop();
-                        idList.pop();
-                        amountList.pop();
-                    }
-                }
-            }
-
-            // Random number to choose resource
-            let randomChoice = Math.random() * totalProbability;
-
-            // For every resource in the list
-            for (let j = 0; j < probabilityList.length; j++) {
-                // If the resource is selected
-                if (randomChoice < probabilityList[j]) {
-                    // Add the resource stats to the grind and break
-                    grind.current = resourceList[j];
-                    grind.resourceID = idList[j];
-                    grind.grindAmount = amountList[j];
-                    break;
-                }
-
-                // Change number by the probability of the resource
-                randomChoice -= probabilityList[j];
-            }
-
-            // Check if the auto-grind has been unlocked
-            if (grind.auto) {
-                // For every resource in the auto-list
-                for (let auto of grind.auto) {
-                    // If you have the resource
-                    if (player.resources[auto].amount > 0) {
-                        // Get grind resource info
-                        let resource = grind.resources[grind.resourceID];
-                        let totalTime = 0;
-                        let toolUsed = "";
-
-                        // For every tool in the resource
-                        for (let tool of resource.time) {
-                            // If you have the tool
-                            if ((player.resources[tool[0]] && player.resources[tool[0]].amount > 0) || tool[0] === "") {
-                                // Select the tool and set the time
-                                toolUsed = tool[0];
-                                totalTime = tool[1];
-                                break;
-                            }
-                        }
-
-                        // If the resource has any mults
-                        if (resource.mults) {
-                            // For every mult in the resource
-                            for (let mult of resource.mults) {
-                                // If you have the mult
-                                if (mult[0] && mult[1] && player.resources[mult[0]] && player.resources[mult[0]].amount > 0) {
-                                    // Divide totalTime by mult
-                                    totalTime /= mult[1];
-                                }
-                            }
-                        }
-
-                        // Start grinding the resource and break
-                        grind.clicked = true;
-                        grind.currentGrindTime = 0;
-                        grind.totalGrindTime = totalTime;
-
-                        break;
-                    }
-                }
-            }
-            
-
+        if (!grindCurrent) {
+            findResourceToGrind(area, grind, null, i);
         }
         // If there is a grind right now and it has been started, count down the timer
-        else {
-            if (grind.clicked) {
-                // Add time to grind
-                grind.currentGrindTime += diff / 1000;
-
-                // When the grind is done, give the resource
-                if (grind.currentGrindTime > grind.totalGrindTime) {
-                    // Get the grind resource info
-                    let grindResource = grind.resources[grind.resourceID];
-
-                    // If there are custom resources
-                    if (grindResource.customResources) {
-                        // If there are any guaranteed resources
-                        if (grindResource.customResources.guaranteed) {
-                            let guaranteedResourceList = grindResource.customResources.guaranteed;
-
-                            // For every guaranteed resource
-                            for (let guaranteedResource of guaranteedResourceList) {
-                                // Get the amount
-                                let amount = guaranteedResource.amount;
-
-                                // If the amount is an array: Choose a random number between the amount
-                                if (Array.isArray(amount)) {
-                                    amount = randomRange(amount[0], amount[1]);
-                                }
-
-                                // Add the resource
-                                player.resources[guaranteedResource.name].amount += randomRound(amount * grind.grindAmount);
-                            }
-                        }
-
-                        // If there are any random resources
-                        if (grindResource.customResources.random) {
-                            let randomResourceList = grindResource.customResources.random;
-
-                            // create lists
-                            let rolls = 1;
-                            let totalProbability = 0;
-                            let resourceList = [];
-                            let probabilityList = [];
-                            let amountList = [];
-
-                            if (grindResource.customResources.randomRolls !== undefined) {
-                                rolls = grindResource.customResources.randomRolls;
-                                if (rolls < 0) rolls = 0;
-                            }
-
-                            // For every random resource
-                            for (let randomResource of randomResourceList) {
-                                // Add to the resource to the lists
-                                totalProbability += randomResource.probability;
-                                resourceList.push(randomResource.name);
-                                probabilityList.push(randomResource.probability);
-                                amountList.push(randomResource.amount);
-                            }
-
-                            // For every roll
-                            for (let i = 0; i < rolls; i++) {
-                                // Get a random number between 0 and totalProbability
-                                let randomChoice = Math.random() * totalProbability;
-
-                                // For every resource
-                                for (let j = 0; j < probabilityList.length; j++) {
-                                    // If the resource is selected
-                                    if (randomChoice < probabilityList[j]) {
-                                        // Get the amount
-                                        let amount = amountList[j];
-
-                                        // If the amount is an array: Choose a random number between that amount
-                                        if (Array.isArray(amount)) {
-                                            amount = randomRange(amount[0], amount[1]);
-                                        }
-
-                                        // Add the amount to the resource and break
-                                        player.resources[resourceList[j]].amount += randomRound(amount * grindCurrent.grindAmount);
-                                        break;
-                                    }
-
-                                    // Change the randomChoice by the probability of the resource
-                                    randomChoice -= probabilityList[j];
-                                }
-                            }
-                        }
-                    }
-                    // If there aren't any custom resources
-                    else {
-                        let resourceName = grind.current;
-
-                        if (player.resources[resourceName]) {
-                            player.resources[resourceName].amount += randomRound(grind.grindAmount);
-                        }
-                    }
-
-                    // Reset the grind
-                    grind.current = "";
-                    grind.clicked = false;
-                    grind.currentGrindTime = 0;
-                    grind.grindAmount = 0;
-                }
-            }
-            // If there is a grind right now and it has not been started, check if the auto-grind has been unlocked
-            else {
-                if (grind.auto && grind.resourceID) {
-                    // For every resource in the auto-list
-                    for (let auto of grind.auto) {
-                        // If you have the resource
-                        if (player.resources[auto].amount > 0) {
-                            // Get resource info
-                            let resource = grind.resources[grind.resourceID];
-                            let totalTime = 0;
-
-                            // For every tool in the resource
-                            for (let tool of resource.time) {
-                                // If you have the tool
-                                if ((player.resources[tool[0]] && player.resources[tool[0]].amount > 0) || tool[0] === "") {
-                                    // Select the tool and break
-                                    totalTime = tool[1];
-                                    break;
-                                }
-                            }
-
-                            // If the resource has any mults
-                            if (resource.mults) {
-                                // For every mult in the resource
-                                for (let mult of resource.mults) {
-                                    // If you have the mult
-                                    if (mult[0] && mult[1] && player.resources[mult[0]] && player.resources[mult[0]].amount > 0) {
-                                        // Divide time by the mult
-                                        totalTime /= mult[1];
-                                    }
-                                }
-                            }
-
-                            // Start grinding the grind
-                            grind.clicked = true;
-                            grind.currentGrindTime = 0;
-                            grind.totalGrindTime = totalTime;
-                            break;
-                        }
-                    }
-                }
-            }
+        else if (player.unlockedGrinds[areaID].includes(grind.name)) {
+            countDownGrindTimer(area, grind, null, diff, i);
         }
+    }
+
+    // Check for auto crafts
+    for (let craft of area.crafts) {
+        checkAutoCrafts(area, craft, diff);
     }
 }
 

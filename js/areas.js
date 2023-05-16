@@ -8,8 +8,7 @@ setGameInfo({
 
 // Resources
 
-addResources(                                           // Function for adding all the resources (items/tools/buildings) that are used in your game!
-    {
+addResources({                                          // Function for adding all the resources (items/tools/buildings) that are used in your game!
     dirt: {
         image: "images/dirt.png",
     },
@@ -28,8 +27,7 @@ addResources(                                           // Function for adding a
     "dirt hut": {
         image: "images/dirtHut.png",
     },
-}
-);
+});
 
 // Areas
 
