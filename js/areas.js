@@ -100,7 +100,7 @@ addArea("c",                                            // Function for adding a
         },
     ],
 
-    update(diff) {                                      // diff is the time in milliseconds since last time the update function was run
+    update(diff) {                                      // diff is the time in milliseconds since last time the update function was runned
         
     },
 }
