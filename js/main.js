@@ -402,8 +402,9 @@ function setUpGrinds() {
             grindResource(area, grindDivEl, i);
         });
 
-        grindDivEl.addEventListener("mouseover", () => {
-            showGrindResources(grind);
+        grindDivEl.addEventListener("mouseover", (e) => {
+            e=e || window.event;
+            showGrindResources(e, grind);
         });
 
         grindDivEl.addEventListener("mousedown", (e) => {
@@ -817,7 +818,7 @@ function hideRecipe() {
 }
 
 // Show grind resources
-function showGrindResources(grind) {
+function showGrindResources(e, grind) {
     // If show grind materials is off: Return
     if (!player.showGrindMats) {
         return;
@@ -887,6 +888,8 @@ function showGrindResources(grind) {
     }
 
     grindResourceDivEl.style.display = "block";
+
+    moveGrindResources(e);
 }
 
 // Move grind resources
