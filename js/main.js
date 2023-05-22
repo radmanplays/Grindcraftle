@@ -1,7 +1,7 @@
 // Player object
 let player = {
     currentArea: 0,
-    toolVersion: "1.1.1",
+    toolVersion: "1.1.2",
     areaList: [],
     lastScreenUpdate: Date.now(),
     resources: {},
@@ -211,8 +211,6 @@ function encodeSave(str) {
 function decodeSave(str) {
     return decodeURIComponent(escape(window.atob(str)));
 }
-
-
 
 // Add resources to the player object
 function addResources(contents) {
@@ -489,11 +487,12 @@ function setUpCrafts() {
             });
         }
 
-        divEl.addEventListener("mouseover", () => {
+        divEl.addEventListener("mouseover", (e) => {
+            e=e || window.event;
             if (player.resources[craftName].limit || player.resources[craftName].limit === 0) {
-                showRecipe(craft, name + " (Max: " + ((player.resources[craftName].limit > 999999999) ? shortenNumber(player.resources[craftName].limit) : player.resources[craftName].limit) + ")");
+                showRecipe(e, craft, name + " (Max: " + ((player.resources[craftName].limit > 999999999) ? shortenNumber(player.resources[craftName].limit) : player.resources[craftName].limit) + ")");
             } else {
-               showRecipe(craft, name); 
+                showRecipe(e, craft, name); 
             }
         });
 
@@ -681,7 +680,7 @@ function craftResource(resource) {
 }
 
 // Show crafting recipe
-function showRecipe(resource, name) {
+function showRecipe(e, resource, name) {
     // If show crafting recipes is off: Return
     if (!player.showCraftRecipes) {
         return;
@@ -767,6 +766,8 @@ function showRecipe(resource, name) {
     }
 
     recipeDivEl.style.display = "block";
+
+    moveRecipe(e);
 }
 
 // Move crafting recipe

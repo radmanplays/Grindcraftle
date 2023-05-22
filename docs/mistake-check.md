@@ -21,6 +21,3 @@ dirt: {
 **Grind or craft images don't show up:**
  - Check if you have added all the required properties to the craft/grind.
  - If this doesn't work, check that the image you're using has a working link/path, and is referenced correctly.
-
-**Error message: "Failed to execute 'btoa' on 'Window'":**
- - Some letters or symbols outside of the english alphabet might break the save encoding system. If you get this error message, you'll probably have to change some of the resource, grind or area names.
