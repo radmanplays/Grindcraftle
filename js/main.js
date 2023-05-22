@@ -204,13 +204,15 @@ function getSavedData(save) {
 
 // Encode save
 function encodeSave(str) {
-    return btoa(str);
+    return window.btoa(unescape(encodeURIComponent(str)));
 }
 
 // Decode save
 function decodeSave(str) {
-    return atob(str);
+    return decodeURIComponent(escape(window.atob(str)));
 }
+
+
 
 // Add resources to the player object
 function addResources(contents) {
@@ -338,7 +340,7 @@ function setUpAreaButtons() {
         areaDivEl.className = "area-div";
 
         areaDivEl.addEventListener("click", () => {
-            switchArea(areaID);
+            if (areaID !== player.areaList[player.currentArea]) switchArea(areaID);
         });
 
         // Show on website
