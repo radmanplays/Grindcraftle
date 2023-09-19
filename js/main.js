@@ -1530,7 +1530,7 @@ function randomFloat(min, max) {
 // Randomly round a number up or down
 function randomRound(number) {
     // Get rest of number
-    numFloor = Math.floor(number);
+    let numFloor = Math.floor(number);
     let numRest = number - numFloor;
 
     // If the rest is more than a random number between 0 and 1: Round up
