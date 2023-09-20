@@ -1,7 +1,7 @@
 # Changelog
 
 ## v1.1.2 - 5/22/23:
- - A few more small bug fixes to get ready for release
+ - A few more small bug fixes to get ready for main release
 
 ### v1.1.1 - 5/16/23:
  - More code cleanups
