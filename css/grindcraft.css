@@ -393,6 +393,18 @@ a:hover {
     box-shadow: 5px 5px 5px black;
     border-radius: 10px;
 }
+.pause-div {
+    display: none;
+    position: absolute;
+    color: black;
+    text-shadow: none;
+    width: 400px;
+    left: calc(50% - 200px);
+    background-color: #ababab;
+    border: 5px solid #4d4d4d;
+    box-shadow: 5px 5px 5px black;
+    border-radius: 10px;
+}
 
 .setting-header {
     text-align: center;
