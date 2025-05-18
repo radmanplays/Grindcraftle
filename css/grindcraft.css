@@ -414,6 +414,21 @@ a:hover {
     background: linear-gradient(#b6b6b6, #888888);
 }
 
+.pause-button {
+    display: block;
+    margin: 30px auto 20px auto;
+    padding: 10px 40px 5px 40px;
+    border: 2px solid #4d4d4d;
+    font-family: Minecraft;
+    border-radius: 4px;
+    cursor: pointer;
+    background: linear-gradient(#c6c6c6, #989898);
+}
+
+.pause-button:hover {
+    background: linear-gradient(#b6b6b6, #888888);
+}
+
 .setting {
     display: grid;
     grid-template-columns: 200px 1fr;
@@ -459,6 +474,11 @@ a:hover {
 }
 
 .setting-text {
+    margin: 0 0 0 15px;
+    padding-top: 5px;
+}
+
+.pause-text {
     margin: 0 0 0 15px;
     padding-top: 5px;
 }
