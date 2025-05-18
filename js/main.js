@@ -83,9 +83,9 @@ let toolVersionTextEl = document.querySelector("#toolVersion");
 
 messageButtonEl.addEventListener("click", hideMessage);
 settingsButtonEl.addEventListener("click", hideSettings);
-pauseButtonEl.addEventListener("click", hidepause);
+pauseButtonEl.addEventListener("click", hidePause);
 settingsTopButtonEl.addEventListener("click", showSettings);
-pauseTopButtonEl.addEventListener("click", showpause);
+pauseTopButtonEl.addEventListener("click", showPause);
 copySaveButtonEl.addEventListener("click", copySave);
 importSaveButtonEl.addEventListener("click", importSave);
 resetSaveButtonEl.addEventListener("click", resetSave);
@@ -961,7 +961,7 @@ function showPause() {
 }
 
 // Hide settings
-function hidepause() {
+function hidePause() {
     pauseDivEl.style.display = "none";
 }
 
