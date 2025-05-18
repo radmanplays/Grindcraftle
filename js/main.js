@@ -59,6 +59,10 @@ let settingsDivEl = document.querySelector(".settings-div");
 let settingsButtonEl = document.querySelector(".settings-button");
 let settingEls = document.querySelectorAll(".setting");
 
+let pauseDivEl = document.querySelector(".pause-div");
+let pauseButtonEl = document.querySelector(".pause-button");
+let pauseEls = document.querySelectorAll(".pause");
+
 let tpsTextEl = document.querySelector(".tps-text");
 let settingsTopButtonEl = document.querySelector(".settings-top-button");
 
@@ -78,6 +82,7 @@ let toolVersionTextEl = document.querySelector("#toolVersion");
 
 messageButtonEl.addEventListener("click", hideMessage);
 settingsButtonEl.addEventListener("click", hideSettings);
+pauseButtonEl.addEventListener("click", hidepause);
 settingsTopButtonEl.addEventListener("click", showSettings);
 copySaveButtonEl.addEventListener("click", copySave);
 importSaveButtonEl.addEventListener("click", importSave);
@@ -944,6 +949,18 @@ function showSettings() {
 // Hide settings
 function hideSettings() {
     settingsDivEl.style.display = "none";
+}
+
+// Show pause
+function showPause() {
+    // Show settings and place it in the middle of the screen
+    pauseDivEl.style.display = "block";
+    pauseDivEl.style.top = (window.innerHeight - settingsDivEl.clientHeight) / 2 + "px";
+}
+
+// Hide settings
+function hidepause() {
+    pauseDivEl.style.display = "none";
 }
 
 // Copy save
