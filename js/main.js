@@ -65,6 +65,7 @@ let pauseEls = document.querySelectorAll(".pause");
 
 let tpsTextEl = document.querySelector(".tps-text");
 let settingsTopButtonEl = document.querySelector(".settings-top-button");
+let pauseTopButtonEl = document.querySelector(".pause-top-button");
 
 let maxFPSInputEl = document.querySelector("#maxFPSInput");
 let maxFPSLabelEl = document.querySelector("#maxFPSLabel");
@@ -84,6 +85,7 @@ messageButtonEl.addEventListener("click", hideMessage);
 settingsButtonEl.addEventListener("click", hideSettings);
 pauseButtonEl.addEventListener("click", hidepause);
 settingsTopButtonEl.addEventListener("click", showSettings);
+pauseTopButtonEl.addEventListener("click", showpause);
 copySaveButtonEl.addEventListener("click", copySave);
 importSaveButtonEl.addEventListener("click", importSave);
 resetSaveButtonEl.addEventListener("click", resetSave);
