@@ -2,7 +2,7 @@
 setGameInfo({
     name: "Grindcraftle",                         // The name of your game!
     version: "0.1",                                     // The current version of your game!
-    icon: "images/system/blank.png",                    // Link or path to an icon image for your game!
+    icon: "images/system/grindcraftle.png",                    // Link or path to an icon image for your game!
     ID: "Grindcraftle",                             // Your game's ID! Should be unique for every game!
 });
 
